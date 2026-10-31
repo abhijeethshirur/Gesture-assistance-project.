@@ -1,22 +1,14 @@
-/*
- * PROJECT: Gesture Assistant (Final Fixed Version)
- * SENSOR:  SparkFun APDS-9960
- * MODE:    Polling (Continuous Check) - No Interrupt Pin needed
- */
-
 #include <Wire.h>
 #include <SparkFun_APDS9960.h>
 #include <LiquidCrystal_I2C.h>
 
-// --- HARDWARE CONFIGURATION ---
+// HARDWARE CONFIGURATION
 LiquidCrystal_I2C lcd(0x27, 16, 2); 
 SparkFun_APDS9960 apds = SparkFun_APDS9960();
 
 // Variables
 int currentMode = 1;
 const unsigned long COMBO_TIMEOUT = 1000; 
-
-// ============================================================
 
 // Forward declaration
 void showModeStatus(); 
@@ -29,7 +21,7 @@ void displayMessage(String line1, String line2 = "") {
   lcd.print(line2);
   // Keep the text on screen for 3 seconds
   delay(3000); 
-  showModeStatus(); // Go back to "Ready" screen
+  showModeStatus();
 }
 
 void showModeStatus() {
@@ -48,7 +40,7 @@ void showModeStatus() {
 void checkForModeSwitch(int targetGesture, int newMode, String line1, String line2) {
   
   lcd.clear();
-  lcd.print("..."); // Visual cue that we are waiting
+  lcd.print("...");
   
   unsigned long startTime = millis();
   bool switched = false;
@@ -67,28 +59,25 @@ void checkForModeSwitch(int targetGesture, int newMode, String line1, String lin
         lcd.setCursor(0, 1);
         lcd.print("Mode " + String(currentMode));
         delay(1500);
-        showModeStatus(); // Show the menu for the new mode
-        break; // Exit loop
+        showModeStatus(); 
+        break; 
       }
     }
   }
   
-  // If we didn't switch, it means it was just a normal single swipe
   if (!switched) {
     displayMessage(line1, line2);
   }
 }
 
-// ============================================================
 // 2. LOGIC ENGINE
-// ============================================================
+
 void handleGesture() {
-  // Check if gesture is present
   if (apds.isGestureAvailable()) {
     
     int gesture = apds.readGesture();
     
-    // --- LOGIC FOR MODE 1 ---
+    // LOGIC FOR MODE 1
     if (currentMode == 1) {
       switch (gesture) {
         case DIR_UP:
@@ -101,13 +90,12 @@ void handleGesture() {
           displayMessage("Good bye");
           break;
         case DIR_RIGHT:
-          // *** COMBO CHECK (Right -> Left) ***
           checkForModeSwitch(DIR_LEFT, 2, "I didn't", "understand");
           break;
       }
     }
     
-    // --- LOGIC FOR MODE 2 ---
+    // LOGIC FOR MODE 2 
     else if (currentMode == 2) {
       switch (gesture) {
         case DIR_UP:
@@ -120,7 +108,6 @@ void handleGesture() {
           displayMessage("I am hungry");
           break;
         case DIR_LEFT:
-          // *** COMBO CHECK (Left -> Right) ***
           checkForModeSwitch(DIR_RIGHT, 1, "Where is the", "restroom");
           break;
       }
@@ -128,9 +115,7 @@ void handleGesture() {
   }
 }
 
-// ============================================================
 // 3. SETUP & MAIN LOOP
-// ============================================================
 void setup() {
   Serial.begin(9600);
   
@@ -144,13 +129,11 @@ void setup() {
   if (apds.init()) { 
     Serial.println("Sensor Init: SUCCESS"); 
   } else { 
-    // Force continue even if ID fails
     Serial.println("Sensor Init: FAILED (Forced)"); 
   }
   
-  // Increase Gain (Sensitivity) - IMPORTANT FOR CLONES
   apds.setGestureGain(GGAIN_4X);
-  apds.setGestureLEDDrive(LED_DRIVE_100MA); // Max Power
+  apds.setGestureLEDDrive(LED_DRIVE_100MA);
 
   // Start Gesture Engine
   if (apds.enableGestureSensor(true)) { 
@@ -169,9 +152,6 @@ void setup() {
 }
 
 void loop() {
-  // CONSTANTLY CHECK (Polling)
   handleGesture();
-  
-  // Small delay to prevent crashing
   delay(100); 
 }
